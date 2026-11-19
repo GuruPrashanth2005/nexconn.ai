@@ -8,9 +8,11 @@ interface NexconnLabChatProps {
 }
 
 export const NexconnLabChat: React.FC<NexconnLabChatProps> = ({
-  currentUserId = 'student_' + Math.floor(1000 + Math.random() * 9000),
+  currentUserId: propUserId,
   currentUserName = 'Chemistry Learner',
 }) => {
+  const [generatedUserId] = useState(() => 'student_' + Math.floor(1000 + Math.random() * 9000));
+  const currentUserId = propUserId || generatedUserId;
   const [isOpen, setIsOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
@@ -26,13 +28,12 @@ export const NexconnLabChat: React.FC<NexconnLabChatProps> = ({
   ]);
 
   const uiContainerRef = useRef<HTMLDivElement>(null);
-  const manager = NexconnManager.getInstance();
 
   useEffect(() => {
     let mounted = true;
 
     async function setupChat() {
-      const ok = await manager.initAndConnect(currentUserId, currentUserName);
+      const ok = await NexconnManager.getInstance().initAndConnect(currentUserId, currentUserName);
       if (mounted && ok) {
         setIsConnected(true);
       }
@@ -59,8 +60,8 @@ export const NexconnLabChat: React.FC<NexconnLabChatProps> = ({
         rootElement.style.overflow = 'hidden';
         uiContainerRef.current.appendChild(rootElement);
 
-        if (manager.isReady()) {
-          manager.openDirectChat(targetPeerId);
+        if (NexconnManager.getInstance().isReady()) {
+          NexconnManager.getInstance().openDirectChat(targetPeerId);
         }
       } catch (e) {
         console.warn('ChatUI web component mount notice:', e);
@@ -81,7 +82,7 @@ export const NexconnLabChat: React.FC<NexconnLabChatProps> = ({
     setChatLog((prev) => [...prev, newMsg]);
 
     try {
-      const res = await manager.sendDirectTextMessage(targetPeerId, messageText);
+      const res = await NexconnManager.getInstance().sendDirectTextMessage(targetPeerId, messageText);
       console.log('[Nexconn Chat SDK] Message sent result:', res);
     } catch (err) {
       console.warn('[Nexconn Chat SDK] Sent locally (peer offline simulation):', err);

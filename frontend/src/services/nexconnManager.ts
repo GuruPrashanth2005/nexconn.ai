@@ -2,6 +2,15 @@ import { NCEngine, AreaCode, LogLevel, ConnectionStatusHandler, MessageHandler, 
 import { NCChatUIApplication } from '@nexconn/chatui';
 import type { ServiceHooks } from '@nexconn/chatui';
 
+declare global {
+  interface Window {
+    __HYD_CLIENT_ID?: string;
+    __CURRENT_ROOM_ID?: string;
+    __nexconn_channel?: BroadcastChannel | null;
+    __LAST_TITRANT_VOL?: number;
+  }
+}
+
 export interface LabTelemetryData {
   type: 'TELEMETRY' | 'ANNOUNCEMENT' | 'ROOM_SYNC' | 'USER_JOINED' | 'PROCEDURE_STEP' | 'STATE_SYNC' | 'CHAT_MESSAGE' | 'REQUEST_SYNC';
   roomId: string;
@@ -16,7 +25,7 @@ export interface LabTelemetryData {
   message?: string;
   chatMessage?: { role: 'user' | 'assistant'; content: string };
   // Full State Snapshot
-  snapshot?: any;
+  snapshot?: Record<string, unknown>;
   // Procedure Sync Fields
   checklist?: Record<string, boolean>;
   isBuretteFilled?: boolean;
@@ -51,15 +60,15 @@ class NexconnManager {
       if (storedRoom) {
         this.activeRoomId = storedRoom;
       }
-      (window as any).__HYD_CLIENT_ID = this.clientId;
-      (window as any).__CURRENT_ROOM_ID = this.activeRoomId;
+      window.__HYD_CLIENT_ID = this.clientId;
+      window.__CURRENT_ROOM_ID = this.activeRoomId;
     }
     
     // Persistent BroadcastChannel using the activeRoomId
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
         this.broadcastChannel = new BroadcastChannel(`hydrolab_${this.activeRoomId}`);
-        (window as any).__nexconn_channel = this.broadcastChannel;
+        window.__nexconn_channel = this.broadcastChannel;
         this.broadcastChannel.onmessage = (event) => {
           if (event.data && (!event.data.roomId || event.data.roomId === this.activeRoomId)) {
             this.notifyLocalListeners(event.data);
@@ -128,7 +137,7 @@ class NexconnManager {
             onMessageReceived: ({ messages }) => {
               for (const msg of messages) {
                 try {
-                  const content = msg.content as any;
+                  const content = msg.content as Record<string, unknown> | undefined;
                   if (content && typeof content === 'object' && 'text' in content) {
                     const text = content.text;
                     if (text && typeof text === 'string' && text.startsWith('__NEXCONN_LAB_TELEMETRY__')) {
@@ -206,7 +215,7 @@ class NexconnManager {
     if (this.activeRoomId === roomId && this.broadcastChannel) return;
     this.activeRoomId = roomId;
     if (typeof window !== 'undefined') {
-      (window as any).__CURRENT_ROOM_ID = roomId;
+      window.__CURRENT_ROOM_ID = roomId;
       sessionStorage.setItem('current_active_lab_room', roomId);
       sessionStorage.setItem('active_lab_room', roomId);
     }
@@ -218,7 +227,7 @@ class NexconnManager {
           this.broadcastChannel.close();
         }
         this.broadcastChannel = new BroadcastChannel(`hydrolab_${roomId}`);
-        (window as any).__nexconn_channel = this.broadcastChannel;
+        window.__nexconn_channel = this.broadcastChannel;
         this.broadcastChannel.onmessage = (event) => {
           if (event.data && (!event.data.roomId || event.data.roomId === this.activeRoomId)) {
             this.notifyLocalListeners(event.data);
@@ -233,9 +242,9 @@ class NexconnManager {
   /**
    * Broadcasts a full state snapshot so every single button, reading, flask and slider syncs seamlessly
    */
-  public async broadcastFullSnapshot(snapshot: any) {
-    const vol = snapshot.flaskTitrantVolume !== undefined ? snapshot.flaskTitrantVolume : (
-      typeof window !== 'undefined' ? (window as any).__LAST_TITRANT_VOL || 0 : 0
+  public async broadcastFullSnapshot(snapshot: Record<string, unknown>) {
+    const vol = typeof snapshot.flaskTitrantVolume === 'number' ? snapshot.flaskTitrantVolume : (
+      typeof window !== 'undefined' ? (window.__LAST_TITRANT_VOL || 0) : 0
     );
 
     const fullData: LabTelemetryData = {
@@ -243,7 +252,7 @@ class NexconnManager {
       roomId: this.activeRoomId,
       studentId: this.currentUserId,
       clientId: this.clientId,
-      module: snapshot.activeModule || 'HARDNESS',
+      module: typeof snapshot.activeModule === 'string' ? snapshot.activeModule : 'HARDNESS',
       volumeDispensed: vol,
       flaskColor: '',
       isEndpointReached: false,

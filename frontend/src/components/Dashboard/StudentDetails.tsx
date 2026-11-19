@@ -13,9 +13,10 @@ export const StudentDetails: React.FC = () => {
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
   const [currentQuizIndex, setCurrentQuizIndex] = useState(0);
 
-  useEffect(() => {
+  const handleSelectSession = (id: string) => {
+    setSelectedSessionId(id);
     setCurrentQuizIndex(0);
-  }, [selectedSessionId]);
+  };
 
   const [isLoading, setIsLoading] = useState(true);
 
@@ -227,7 +228,7 @@ export const StudentDetails: React.FC = () => {
                   return (
                     <div 
                       key={s.id} 
-                      onClick={() => setSelectedSessionId(s.id)}
+                      onClick={() => handleSelectSession(s.id)}
                     style={{ 
                       padding: '12px', 
                       background: selectedSessionId === s.id ? 'rgba(14, 165, 233, 0.15)' : 'rgba(255,255,255,0.02)',

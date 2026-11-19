@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useSimulationStore, applyRemoteSnapshot, type ExperimentModule, type ExperimentMode } from '../state/simulationStore';
+import { useSimulationStore, applyRemoteSnapshot, type ExperimentModule, type ExperimentMode, type SimulationState } from '../state/simulationStore';
 import { useAuth } from '../context/AuthContext';
 import Header from './Header';
 import AlkalinityPanel from './AlkalinityPanel';
@@ -59,13 +59,13 @@ export const LabEnvironment: React.FC = () => {
       if (data.type === 'REQUEST_SYNC') {
         // A peer just joined or reloaded! Send our current full snapshot so they immediately mirror us
         const currentState = useSimulationStore.getState();
-        NexconnManager.getInstance().broadcastFullSnapshot(currentState);
+        NexconnManager.getInstance().broadcastFullSnapshot(currentState as unknown as Record<string, unknown>);
       } else if (data.type === 'STATE_SYNC' && data.snapshot) {
         // Complete state snapshot mutual sync (readings, checklist, equipment, liquids, swirl, flow)
         // If snapshot volume is 0 or less than local volume, but we already have progress or are titrating, preserve local volume
         const currentVol = useSimulationStore.getState().flaskTitrantVolume;
-        const snapshotUpdates = { ...data.snapshot };
-        if (snapshotUpdates.flaskTitrantVolume !== undefined && snapshotUpdates.flaskTitrantVolume < currentVol && currentVol > 0) {
+        const snapshotUpdates = { ...data.snapshot } as Partial<SimulationState>;
+        if (typeof snapshotUpdates.flaskTitrantVolume === 'number' && snapshotUpdates.flaskTitrantVolume < currentVol && currentVol > 0) {
           delete snapshotUpdates.flaskTitrantVolume;
         }
         applyRemoteSnapshot(snapshotUpdates);
@@ -77,7 +77,7 @@ export const LabEnvironment: React.FC = () => {
       } else if (data.type === 'TELEMETRY') {
         // Instant sync peer titration volume to local 3D simulation state and color calculations
         const state = useSimulationStore.getState();
-        const updates: any = {
+        const updates: Partial<SimulationState> = {
           ...(data.isStopcockOpen !== undefined ? { isStopcockOpen: data.isStopcockOpen } : {}),
           ...(data.stopcockOperatorId !== undefined ? { stopcockOperatorId: data.stopcockOperatorId } : {}),
         };
@@ -135,7 +135,7 @@ export const LabEnvironment: React.FC = () => {
 
           if (telem.type === 'TELEMETRY') {
             const state = useSimulationStore.getState();
-            const updates: any = {
+            const updates: Partial<SimulationState> = {
               ...(telem.isStopcockOpen !== undefined ? { isStopcockOpen: telem.isStopcockOpen } : {}),
               ...(telem.stopcockOperatorId !== undefined ? { stopcockOperatorId: telem.stopcockOperatorId } : {}),
             };
@@ -161,14 +161,16 @@ export const LabEnvironment: React.FC = () => {
             applyRemoteSnapshot(snapshotUpdates);
           }
         }
-      } catch {}
+      } catch {
+        // Ignore network polling hiccups
+      }
     }, 150);
 
     return () => {
       unsubscribe();
       clearInterval(pollInterval);
     };
-  }, []);
+  }, [user?.email, user?.name]);
 
   // Synchronize URL parameters with Zustand store
   useEffect(() => {

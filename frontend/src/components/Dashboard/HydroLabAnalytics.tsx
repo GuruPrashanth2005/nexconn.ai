@@ -144,7 +144,7 @@ export const HydroLabAnalytics: React.FC<HydroLabAnalyticsProps> = ({ aiMetrics 
             </thead>
             <tbody>
               {displayModules.map((m: { name: string, count: number }, i: number) => {
-                const totalModReqs = (metrics.moduleUsage as any[]).reduce((acc, curr) => acc + curr.count, 0);
+                const totalModReqs = (metrics.moduleUsage as { name: string; count: number }[]).reduce((acc, curr) => acc + curr.count, 0);
                 const usagePct = totalModReqs > 0 ? Math.round((m.count / totalModReqs) * 100) : 0;
                 return (
                 <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>

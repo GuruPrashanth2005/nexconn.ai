@@ -96,9 +96,10 @@ export const PostLabQuiz: React.FC<PostLabQuizProps> = ({ moduleName, mistakes, 
           score: percentage,
           quizData: quizDataPayload
         });
-      } catch (err: any) {
-        console.error("Failed to submit quiz score:", err);
-        alert("Failed to submit quiz score: " + (err.response?.data?.message || err.message));
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { message?: string } }; message?: string };
+        console.error("Failed to submit quiz score:", error);
+        alert("Failed to submit quiz score: " + (error.response?.data?.message || error.message || 'Unknown error'));
       }
     }
   };

@@ -24,7 +24,7 @@ export const FacultyDashboard: React.FC = () => {
   const [newStudentEmail, setNewStudentEmail] = useState('');
   const [message, setMessage] = useState({ text: '', type: '' });
   const [isLoading, setIsLoading] = useState(true);
-  const [liveSessions, setLiveSessions] = useState<Record<string, LabTelemetryData>>({
+  const [liveSessions, setLiveSessions] = useState<Record<string, LabTelemetryData>>(() => ({
     'LAB-402': {
       type: 'TELEMETRY',
       roomId: 'LAB-402',
@@ -36,7 +36,7 @@ export const FacultyDashboard: React.FC = () => {
       isEndpointReached: false,
       timestamp: Date.now(),
     }
-  });
+  }));
   const [announcementText, setAnnouncementText] = useState('');
   const [broadcastStatus, setBroadcastStatus] = useState<string | null>(null);
 
