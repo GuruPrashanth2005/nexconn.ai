@@ -1,0 +1,92 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  FACULTY
+  STUDENT
+}
+
+enum ModuleType {
+  HARDNESS
+  ALKALINITY
+  COD
+  PH
+}
+
+enum ModeType {
+  PRACTICE
+  ASSESSMENT
+}
+
+enum SessionStatus {
+  PASSED
+  FAILED
+  ABORTED
+}
+
+model User {
+  id                  String             @id @default(uuid())
+  email               String             @unique
+  name                String?
+  role                Role               @default(STUDENT)
+  assignedByFacultyId String?
+  createdAt           DateTime           @default(now())
+  
+  // Relationships
+  assignedByFaculty   User?                @relation("FacultyStudents", fields: [assignedByFacultyId], references: [id])
+  students            User[]               @relation("FacultyStudents")
+  experimentSessions  ExperimentSession[]
+  activityLogs        StudentActivityLog[]
+  tokenUsageLogs      TokenUsageLog[]
+}
+
+model ExperimentSession {
+  id               String       @id @default(uuid())
+  studentId        String
+  module           ModuleType
+  mode             ModeType
+  score            Float
+  timeSpentSeconds Int
+  status           SessionStatus
+  mistakes         Json?        
+  improvementAreas Json?
+  quizScore        Float?        
+  quizData         Json?
+  createdAt        DateTime     @default(now())
+
+  student          User         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model StudentActivityLog {
+  id           String   @id @default(uuid())
+  studentId    String
+  activityType String   // e.g., 'ELEMENT_SEARCH', 'MOLECULE_SYNTHESIS', 'ACTION'
+  moduleId     String?  // e.g., 'MOLECULE_BUILDER', 'ELEMENT_EXPLORER'
+  durationMs   Int?     // Time spent in milliseconds
+  details      Json?    // Stores specific data like { element: 'Carbon' } or { action: 'ZOOM', cameraDetails: {...} }
+  createdAt    DateTime @default(now())
+
+  student      User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
+
+model TokenUsageLog {
+  id           String   @id @default(uuid())
+  studentId    String
+  module       String   // e.g., 'ELEMENT_EXPLORER', 'MOLECULE_BUILDER', 'MANUALS'
+  context      String   // e.g., 'CHAT', 'SYNTHESIS_SIMULATION', 'COMPOUND_INFO'
+  inputTokens  Int
+  outputTokens Int
+  createdAt    DateTime @default(now())
+
+  student      User     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+}
