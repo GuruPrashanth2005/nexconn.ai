@@ -52,19 +52,10 @@ const LoginBackground3D = ({ role }: { role: 'STUDENT' | 'FACULTY' }) => {
 export const LoginPage: React.FC = () => {
   const [role, setRole] = useState<'STUDENT' | 'FACULTY'>('STUDENT');
   const [error, setError] = useState<string | null>(null);
-  const { login, loginAsGuest } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
 
   const primaryColor = role === 'STUDENT' ? '#06b6d4' : '#a855f7';
-
-  const handleGuestLogin = () => {
-    loginAsGuest(role);
-    if (role === 'FACULTY') {
-      navigate('/faculty-dashboard');
-    } else {
-      navigate('/student-dashboard');
-    }
-  };
 
   const handleSuccess = async (credentialResponse: any) => {
     try {
@@ -221,7 +212,7 @@ export const LoginPage: React.FC = () => {
           </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'center' }}>
           <div style={{
             background: '#1a1d2d',
             padding: '2px',
@@ -240,38 +231,6 @@ export const LoginPage: React.FC = () => {
               shape="pill"
             />
           </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '280px', margin: '4px 0' }}>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>or demo</span>
-            <div style={{ flex: 1, height: '1px', background: 'rgba(255,255,255,0.1)' }} />
-          </div>
-
-          <button
-            onClick={handleGuestLogin}
-            style={{
-              width: '100%',
-              maxWidth: '280px',
-              padding: '12px 20px',
-              borderRadius: '100px',
-              border: `1px solid ${primaryColor}60`,
-              background: `linear-gradient(135deg, ${primaryColor}20, rgba(255,255,255,0.03))`,
-              color: '#ffffff',
-              fontSize: '0.9rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: `0 4px 16px ${primaryColor}20`,
-              transition: 'all 0.2s ease'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <span>✨</span> Enter as Demo {role === 'FACULTY' ? 'Faculty' : 'Student'}
-          </button>
         </div>
 
         <div style={{ marginTop: '2.5rem', minHeight: '40px' }}>
