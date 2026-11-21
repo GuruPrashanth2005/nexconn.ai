@@ -17,6 +17,7 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   login: (googleToken: string, requestedRole: UserRole) => Promise<void>;
+  loginAsGuest: (requestedRole: UserRole) => void;
   logout: () => void;
 }
 
@@ -78,8 +79,23 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
+  const loginAsGuest = (requestedRole: UserRole) => {
+    const guestUser: User = {
+      id: requestedRole === 'FACULTY' ? 'faculty_judge_01' : 'student_guru_2026',
+      name: requestedRole === 'FACULTY' ? 'Prof. Faculty (Judge)' : 'Guru Prashanth (Student)',
+      email: requestedRole === 'FACULTY' ? 'judge.faculty@hydrolab3d.edu' : 'student.guru@hydrolab3d.edu',
+      role: requestedRole,
+    };
+    const guestToken = 'guest_jwt_token_' + Date.now();
+    sessionStorage.setItem('token', guestToken);
+    sessionStorage.setItem('user', JSON.stringify(guestUser));
+    setToken(guestToken);
+    setUser(guestUser);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${guestToken}`;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, token, isLoading, login, loginAsGuest, logout }}>
       {children}
     </AuthContext.Provider>
   );
